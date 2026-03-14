@@ -1,0 +1,200 @@
+
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NootedLeaf Configurator</title><style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --blur: blur(15px);
+            --border: rgba(255, 255, 255, 0.2);
+            --accent: #007AFF;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Menu Lateral Estilo Apple */
+        nav {
+            width: 250px;
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: 0.3s;
+        }
+
+        nav h2 { font-size: 1.2rem; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+
+        .nav-item {
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover { background: rgba(255, 255, 255, 0.15); }
+        .active { background: var(--accent) !important; }
+
+        /* Conteúdo Principal */
+        main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Vidro Líquido (Liquid Glass Card) */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        input[type="file"] { display: none; }
+        
+        .upload-box {
+            border: 2px dashed var(--border);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-box:hover { border-color: var(--accent); background: rgba(0, 122, 255, 0.05); }
+
+        select, .btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 122, 255, 0.4); }
+
+        .btn-download-efi {
+            background: #22c55e;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            nav { width: 60px; padding: 10px; }
+            nav h2, .nav-item span { display: none; }
+            main { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h2>🍃 <span>Nootlnc</span></h2>
+        <div class="nav-item active">🏠 <span>Configurator</span></div>
+        <div class="nav-item">📁 <span>EFI Library</span></div>
+        <div class="nav-item">🛠️ <span>Tools</span></div>
+        <div style="margin-top: auto;" class="nav-item">⚙️ <span>Settings</span></div>
+    </nav>
+
+    <main>
+        <div class="glass-card">
+            <h1 style="margin-top: 0;">Liquid Configurator</h1>
+            <p style="color: rgba(255,255,255,0.6);">Edite seu config.plist ou baixe uma EFI pronta.</p>
+
+            <div class="upload-box" onclick="document.getElementById('file-input').click()">
+                <p id="status">📁 Arraste seu config.plist aqui</p>
+                <input type="file" id="file-input" accept=".plist">
+            </div>
+
+            <label>Modelo do Processador (Aura +999)</label>
+            <select id="model">
+                <option value="409A0000">Intel Iris Xe (11th Gen)</option>
+                <option value="A6460000">Intel Iris Xe (12th Gen)</option>
+                <option value="80A70000">Intel Iris Xe (13th Gen)</option>
+            </select>
+
+            <button class="btn btn-primary" onclick="patchPlist()">Aplicar Patch & Baixar</button>
+            <hr style="margin: 30px 0; border: 0; border-top: 1px solid var(--border);">
+            
+            <p>Ou baixe a EFI completa para seu modelo:</p>
+            <button class="btn btn-download-efi" onclick="downloadEFI()">🚀 Baixar EFI Master (v1.0.0)</button>
+        </div>
+    </main>
+
+    <script>
+        let originalContent = "";
+        const fileInput = document.getElementById('file-input');
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            document.getElementById('status').innerText = "✅ " + file.name;
+            const reader = new FileReader();
+            reader.onload = (event) => { originalContent = event.target.result; };
+            reader.readAsText(file);
+        };
+
+        function patchPlist() {
+            if (!originalContent) return alert("No files Select");
+            const id = document.getElementById('model').value;
+            const patch = `
+            <key>PciRoot(0x0)/Pci(0x2,0x0)</key>
+            <dict>
+                <key>device-id</key><data>${id}</data>
+                <key>model</key><string>Intel Iris Xe (NootedLeaf)</string>
+            </dict>`;
+            let newPlist = originalContent.replace('<key>Add</key>', `<key>Add</key>${patch}`);
+            downloadFile(newPlist, 'config.plist');
+        }
+
+        function downloadEFI() {
+            const gen = document.getElementById('model').selectedOptions[0].text;
+            alert("Iniciando download da EFI para: " + gen);
+            // Aqui você linka o ZIP do seu GitHub
+            window.location.href = "https://olarila.com/files/OPENCORE1/EFI.Opencore.NoteBook.12.13.14.Gen.zip";
+        }
+
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/xml' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+    </script>
+</body>
+</html>

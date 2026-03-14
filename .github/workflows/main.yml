@@ -1,0 +1,50 @@
+name: Build NootedLeaf DMG
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Permite que você rode o robô manualmente se quiser
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Nativefier
+        run: npm install -g nativefier
+
+      - name: Create App from Site
+        run: |
+          nativefier --name "NootedLeaf-Configurator" \
+          --internal-urls ".*" \
+          --disable-context-menu \
+          --single-instance \
+          "https://nootlnc.github.io/NootedLeaf-Configurator/"
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist
+          # Localiza a pasta criada pelo nativefier e transforma em DMG
+          hdiutil create -format UDZO -srcfolder "NootedLeaf-Configurator-darwin-"* dist/NootedLeaf_Configurator_v1.0.dmg
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NootedLeaf-DMG
+          path: dist/NootedLeaf_Configurator_v1.0.dmg
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/NootedLeaf_Configurator_v1.0.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

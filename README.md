@@ -1,2 +1,2 @@
 # NootedLeaf-Configurator
-Notedleaf configurator coming soon only to Github 
+This project has been discontinued, but other repositories from nootlnc are available.
